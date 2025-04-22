@@ -1,24 +1,22 @@
 using AxGrid.Base;
 using AxGrid.Model;
 using AxGrid.Path;
-using AxGrid.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Slots
 {
     [Serializable]
     public class ExScroller : MonoBehaviourExtBind
     {
+        [SerializeField] private RectTransform canvasScaler;
         [SerializeField] private RectTransform mask;
         [SerializeField] private RectTransform itemContainer;
 
-        [Tooltip("Пропорционально высоте экрана")]
-        [SerializeField] private float maxScrollSpeed = 2f;
+        [Tooltip("Пропорционально высоте элемента")]
+        [SerializeField] private float scrollSpeedMax = 10f;
         [SerializeField] private float singleItemHeight = 500f;
 
         [SerializeField, Range(1, 3f)] private float accelerateTime = 2f;
@@ -26,9 +24,8 @@ namespace Slots
         [SerializeField, Min(1)] private int decelerateOffsetItemCount = 2;
 
         private float scrolledAmount;
-        private float scrollSpeed;
+        private float scrollSpeedNormalized;
         private Dictionary<RectTransform, Fruit> dictTransformToFruit;
-
 
         [OnStart]
         private void StartThis()
@@ -72,9 +69,9 @@ namespace Slots
         {
             Path = new CPath();
             Path
-                .EasingCircEaseIn(accelerateTime, 0, Screen.height * maxScrollSpeed, value =>
+                .EasingCircEaseIn(accelerateTime, 0, 1, value =>
                 {
-                    scrollSpeed = value;
+                    scrollSpeedNormalized = value;
                 })
                 .Wait(Mathf.Clamp(3 - accelerateTime, 0, 3));
         }
@@ -84,7 +81,7 @@ namespace Slots
         private void StopPath(Action<Fruit> onCompleteCallback)
         {
             // Отключаем скорость, т.к. будем работать с scrolledAmount (сдвигом по оси Y) напрямую
-            scrollSpeed = 0;
+            scrollSpeedNormalized = 0;
 
             float nextValidScrollAmount = GetTargetScrollAmount(decelerateOffsetItemCount);
 
@@ -107,7 +104,12 @@ namespace Slots
         [OnUpdate]
         public void UpdateThis()
         {
-            scrolledAmount += scrollSpeed * Time.deltaTime;
+            float canvasScale = canvasScaler.localScale.x;
+            float scaledSingleItemHeight = singleItemHeight * canvasScale;
+            float correctionFactor = 1 - scaledSingleItemHeight / Screen.height;
+            float correctedScrollSpeedMax = singleItemHeight * scrollSpeedMax * correctionFactor;
+
+            scrolledAmount += scrollSpeedNormalized * correctedScrollSpeedMax * Time.deltaTime;
 
             float halfContainerHeight = itemContainer.childCount / 2 * singleItemHeight;
 

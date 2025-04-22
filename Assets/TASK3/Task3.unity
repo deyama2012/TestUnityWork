@@ -1066,9 +1066,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   globalModel: 0
+  canvasScaler: {fileID: 1083265397}
   mask: {fileID: 811406266}
   itemContainer: {fileID: 1494786638}
-  maxScrollSpeed: 2
+  scrollSpeedMax: 10
   singleItemHeight: 500
   accelerateTime: 2
   decelerateTime: 5
